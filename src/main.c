@@ -71,19 +71,19 @@ int step_array[] = {54, 46, 45, 53};
 // int accel_array[] = {1700, 1699, 1696, 1685, 1659, 1603, 1495, 1323, 1100, 877, 705, 597, 541, 515, 504, 501, 500};
 
 //NOT BAD AT LOW TORQUE 
-// int accel_array[] = {1600, 1599, 1596, 1586, 1563, 1511, 1412, 1254, 1050, 846, 688, 589, 537, 514, 504, 501, 500};
+// int accel_array1[] = {1600, 1599, 1596, 1586, 1563, 1511, 1412, 1254, 1050, 846, 688, 589, 537, 514, 504, 501, 500};
 
 
 //NOT BAD
 // int accel_array[] = {1700, 1680, 1640, 1560, 1460, 1350, 1220, 1080, 950, 840, 740, 660, 620, 600};
 
-// int accel_array[] = {1700, 1680, 1620, 1520, 1400, 1260, 1100, 940, 800, 680, 580, 520, 500};
+int accel_array1[] = {1700, 1680, 1620, 1520, 1400, 1260, 1100, 940, 800, 680, 580, 520, 500};
 
 //Seems sort of okay
-// int accel_array[] = {1500, 1490, 1460, 1420, 1350, 1280, 1190, 1100, 1000, 900, 810, 720, 650, 580, 540, 510, 500};
+// int accel_array1[] = {1500, 1490, 1460, 1420, 1350, 1280, 1190, 1100, 1000, 900, 810, 720, 650, 580, 540, 510, 500};
 
 //Bit slow
-// int accel_array[] = {1700, 1690, 1650, 1600, 1520, 1430, 1330, 1220, 1100, 980, 870, 770, 680, 600, 550, 510, 500};\
+// int accel_array[] = {1700, 1690, 1650, 1600, 1520, 1430, 1330, 1220, 1100, 980, 870, 770, 680, 600, 550, 510, 500};
 
 //Close
 // int accel_array[] = {1500, 1490, 1460, 1420, 1350, 1280, 1190, 1100, 1000, 900, 810, 720, 650, 580, 540, 510, 500};
@@ -94,7 +94,7 @@ int step_array[] = {54, 46, 45, 53};
 // int accel_array[] = {1700, 1680, 1620, 1524, 1400, 1255, 1100, 945, 800, 676, 580, 520, 500};
 
 //Pretty good at high torque
-// int accel_array[] = {1700, 1688, 1654, 1599, 1524, 1433, 1330, 1217, 1100, 983, 870, 767, 676, 601, 546, 512, 500};
+int accel_array[] = {1700, 1688, 1654, 1599, 1524, 1433, 1330, 1217, 1100, 983, 870, 767, 676, 601, 546, 512, 500};
 
 // typedef struct {
 //     int *delays;
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]){
 	CCW_stepper(3);
 	//Initialize motor counter clockwise
 	PORTB = CCW_DC;
-	OCR0A = 120;
+	OCR0A = 140;
 
 	goto POLLING_STAGE;
 
@@ -283,27 +283,27 @@ int main(int argc, char *argv[]){
 	}
 
 
-	// if(lookahead_flag){
-	// 	lookahead_flag = 0;
-	// 	char next = rb.buffer[rb.head];
-	// 	if(next != stepper_tray){
-	// 		if((next - stepper_tray == 3)||(next - stepper_tray == -1)){
-	// 			ACC_CW_STEPPER(50);
-	// 			last_direction = 0;
-	// 		}else if((next - stepper_tray == -3)||(next - stepper_tray == 1)){
-	// 			ACC_CCW_STEPPER(50);
-	// 			last_direction = 1;
-	// 		}else if(last_direction == 0){
-	// 			ACC_CW_STEPPER(100);
-	// 			last_direction = 0;
-	// 		}else{
-	// 			ACC_CCW_STEPPER(100);
-	// 			last_direction = 1;
-	// 		}
-	// 		curr_tray = next;
-	// 		stepper_tray = next;
-	// 	}
-	// }
+	if(lookahead_flag){
+		lookahead_flag = 0;
+		char next = rb.buffer[rb.head];
+		if(next != stepper_tray){
+			if((next - stepper_tray == 3)||(next - stepper_tray == -1)){
+				ACC_CW_STEPPER(50);
+				last_direction = 0;
+			}else if((next - stepper_tray == -3)||(next - stepper_tray == 1)){
+				ACC_CCW_STEPPER(50);
+				last_direction = 1;
+			}else if(last_direction == 0){
+				ACC_CW_STEPPER(100);
+				last_direction = 0;
+			}else{
+				ACC_CCW_STEPPER(100);
+				last_direction = 1;
+			}
+			curr_tray = next;
+			stepper_tray = next;
+		}
+	}
 
 
 	// if(num_sorted > 24){
@@ -358,7 +358,10 @@ int main(int argc, char *argv[]){
 	*/
 	
 	//int size = buffer_size(&rb);
-	
+	if(isEmpty(&rb)){
+		STATE = 0;
+		goto POLLING_STAGE;
+	}
 	if(rb.buffer[rb.head] == curr_tray){
 		//mTimer(100);
 		PORTB = CCW_DC;
@@ -389,15 +392,12 @@ int main(int argc, char *argv[]){
 			}
 		}
 	
-	if(isEmpty(&rb)){
-		STATE = 0;
-		goto POLLING_STAGE;
-	}
+
 	
 
 	sorted_array[rb.buffer[rb.head]]++;
 	curr_tray = rb.buffer[rb.head];
-	//stepper_tray = curr_tray;
+	// stepper_tray = curr_tray;
 	dequeue(&rb);
 	
 
@@ -541,30 +541,27 @@ ISR(ADC_vect)
 					enqueue(&rb, black_plastic);
 		}
 		*/
-		// if(isEmpty(&rb)){
-        //     lookahead_flag = 1;
-        // }
+		if(isEmpty(&rb)){
+            lookahead_flag = 1;
+        }
 		if(refl_low < aluminum_threshold){
 			//Aluminum piece identified
 			//newLink->e.material = aluminum;
 			enqueue(&rb, aluminum);
-			num_sorted++;
 			}else if(refl_low <steel_threshold ){
 			//steel piece identified
 			//newLink->e.material = steel;
 			enqueue(&rb, steel);
-			num_sorted++;
 			}else if(refl_low  < white_threshold){
 			//white plastic piece identified
 			// newLink->e.material = white_plastic;
 			enqueue(&rb, white_plastic);
-			num_sorted++;
 			}else{
 			//black plastic piece identified
 			//newLink->e.material = black_plastic;
 			enqueue(&rb, black_plastic);
-			num_sorted++;
 		}
+		num_sorted++;
 
 		//Adds the new link to the back of the queue
 		// enqueue(&head, &tail, &newLink);
@@ -654,6 +651,16 @@ void ADC_init(void){
 	// by default, the ADC input (analog input is set to be ADC0 / PORTF0
 	ADCSRA |= _BV(ADEN); // enable ADC
 	ADCSRA |= _BV(ADIE); // enable interrupt of ADC
+	//8 8/8 = 1MHz
+	ADCSRA |= _BV(ADPS1) | _BV(ADPS0);
+	//16 8/16 = 500kHz
+	// ADCSRA |= _BV(ADPS2);
+	//32 8/32 = 250kHz
+	// ADCSRA |= _BV(ADPS2) | _BV(ADPS0);
+	//64 8/64 = 125kHz
+	// ADCSRA |= _BV(ADPS2) | _BV(ADPS1);
+	//128 8/128 = 62.5kHz
+	// ADCSRA |= _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
 	ADMUX |= _BV(REFS0); // Set voltage reference as AVCC with external capacitor at AREF pin 
 									  // and left adjust the register
 }
@@ -694,6 +701,7 @@ void CW_stepper(int steps){
 /*======================================
 WRAPPED THESE WITH INTERRUPT ENABLE/DISABLE*/
 void ACC_CW_STEPPER(int steps){
+	//ADCSRA &= ~_BV(ADIE);
 	//cli();
 	//Accelerate Motor
 
@@ -719,6 +727,8 @@ void ACC_CW_STEPPER(int steps){
 		}
 		
 		if(i == (steps - accel_size*2-15)){
+			//ADCSRA |= _BV(ADIE);
+			//sei();
 			PORTB = CCW_DC;
 		}
 			
@@ -763,6 +773,7 @@ void CCW_stepper(int steps){
 }
 
 void ACC_CCW_STEPPER(int steps){
+	//ADCSRA &= ~_BV(ADIE);
 	//cli();
 	//Accelerate Motor
 	// int size = profiles[current_profile_index].size;
@@ -789,6 +800,8 @@ void ACC_CCW_STEPPER(int steps){
 		}
 		
 		if(i == (steps - accel_size*2-15)){
+			//ADCSRA |= _BV(ADIE);'
+			//sei();
 			PORTB = CCW_DC;
 		}
 		PORTA = step_array[curr_step - 1];
