@@ -223,11 +223,6 @@ int main(int argc, char *argv[]){
 	EICRB |= _BV(ISC41); //falling edge EX
 	
 
-
-	//	EICRA &= ~_BV(ISC21) & ~_BV(ISC20); /* These lines would undo the above two lines */
-	//	EICRA &= ~_BV(ISC31) & ~_BV(ISC30); /* Nice little trick */
-
-
 	// See page 112 - EIFR External Interrupt Flags...notice how they reset on their own in 'C'...not in assembly
 	EIMSK |= 0x17;
 	
@@ -321,12 +316,7 @@ int main(int argc, char *argv[]){
 		goto BUCKET_STAGE;
 	}
 
-	/*
-	if(reflective_flag){
-		reflective_flag = 0;
-		goto REFLECTIVE_STAGE;
-	}
-	*/
+	
 	goto POLLING_STAGE;
 
 	
@@ -372,7 +362,7 @@ int main(int argc, char *argv[]){
 	if(rb.buffer[rb.head] == curr_tray){
 		//mTimer(100);
 		PORTB = CCW_DC;
-		mTimer(500);
+		//mTimer(500);
 
 	}else{
 		PORTB = Brake_to_Vcc;
@@ -558,22 +548,22 @@ ISR(ADC_vect)
 			//Aluminum piece identified
 			//newLink->e.material = aluminum;
 			enqueue(&rb, aluminum);
-			// num_sorted++;
+			num_sorted++;
 			}else if(refl_low <steel_threshold ){
 			//steel piece identified
 			//newLink->e.material = steel;
 			enqueue(&rb, steel);
-			// num_sorted++;
+			num_sorted++;
 			}else if(refl_low  < white_threshold){
 			//white plastic piece identified
 			// newLink->e.material = white_plastic;
 			enqueue(&rb, white_plastic);
-			// num_sorted++;
+			num_sorted++;
 			}else{
 			//black plastic piece identified
 			//newLink->e.material = black_plastic;
 			enqueue(&rb, black_plastic);
-			// num_sorted++;
+			num_sorted++;
 		}
 
 		//Adds the new link to the back of the queue
@@ -625,7 +615,7 @@ void mTimer(int count){
 
 	TCCR1B |= _BV(WGM12); //Sets waveform generation mode of Timer 1 to CTC
 
-	OCR1A = 0x0A; //Output compare register to 100 (For 0.1ms)
+	OCR1A = 0x0A; //Output compare register to 10 (For 0.01ms)
 
 	TCNT1 = 0x0000; //Initialize count to 0
 
@@ -733,7 +723,7 @@ void ACC_CW_STEPPER(int steps){
 		}
 			
 		PORTA = step_array[curr_step - 1];
-		mTimer(accel_array1[i]);
+		mTimer(accel_array1[accel_size - 1]);
 	}
 	//sei();
 	//PORTB = CCW_DC;
