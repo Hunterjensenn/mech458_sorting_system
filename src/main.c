@@ -33,7 +33,7 @@
 #define aluminum 3
 #define aluminum_threshold 150
 #define steel_threshold 700
-#define white_threshold 905
+#define white_threshold 935
 #define BUFFER_SIZE 48
 
 /* ====================Global Variables======================*/
@@ -58,6 +58,7 @@ volatile char stepper_tray = 0; // where stepper physically is
 volatile char desired_tray = 0;
 volatile char last_direction = 0; // 0 is CW | 1 is CCW
 volatile uint8_t lookahead_flag = 0;
+volatile char double_flag = 0; // to indicate if the next piece in the queue is the same as the current piece in the queue
 //int step_array[] = {48, 6, 40, 5};
 //int step_array[] = {53, 54, 46, 45};
 int step_array[] = {54, 46, 45, 53};
@@ -77,6 +78,7 @@ int step_array[] = {54, 46, 45, 53};
 //NOT BAD
 // int accel_array[] = {1700, 1680, 1640, 1560, 1460, 1350, 1220, 1080, 950, 840, 740, 660, 620, 600};
 
+//GOOD ONE
 int accel_array1[] = {1700, 1680, 1620, 1520, 1400, 1260, 1100, 940, 800, 680, 580, 520, 500};
 
 //Seems sort of okay
@@ -85,8 +87,8 @@ int accel_array1[] = {1700, 1680, 1620, 1520, 1400, 1260, 1100, 940, 800, 680, 5
 //Bit slow
 // int accel_array[] = {1700, 1690, 1650, 1600, 1520, 1430, 1330, 1220, 1100, 980, 870, 770, 680, 600, 550, 510, 500};
 
-//Close
-// int accel_array[] = {1500, 1490, 1460, 1420, 1350, 1280, 1190, 1100, 1000, 900, 810, 720, 650, 580, 540, 510, 500};
+//PRETTY GOOD - NEVERMIND
+// int accel_array1[] = {1500, 1490, 1460, 1420, 1350, 1280, 1190, 1100, 1000, 900, 810, 720, 650, 580, 540, 510, 500};
 
 //No
 // int accel_array[] = {1600, 1590, 1550, 1480, 1390, 1290, 1170, 1050, 930, 810, 710, 620, 550, 510, 500};
@@ -94,14 +96,14 @@ int accel_array1[] = {1700, 1680, 1620, 1520, 1400, 1260, 1100, 940, 800, 680, 5
 // int accel_array[] = {1700, 1680, 1620, 1524, 1400, 1255, 1100, 945, 800, 676, 580, 520, 500};
 
 //Pretty good at high torque
-int accel_array[] = {1700, 1688, 1654, 1599, 1524, 1433, 1330, 1217, 1100, 983, 870, 767, 676, 601, 546, 512, 500};
+// int accel_array[] = {1700, 1688, 1654, 1599, 1524, 1433, 1330, 1217, 1100, 983, 870, 767, 676, 601, 546, 512, 500};
 
 // typedef struct {
 //     int *delays;
 //     int size;
 // } AccelProfile;
 
-int accel_array1[] = {1700, 1650, 1560, 1430, 1280, 1120, 960, 810, 690, 600, 550, 520, 500};
+// int accel_array1[] = {1700, 1650, 1560, 1430, 1280, 1120, 960, 810, 690, 600, 550, 520, 500};
 int accel_array2[] = {1700, 1699, 1696, 1685, 1659, 1603, 1495, 1323, 1100, 877, 705, 597, 541, 515, 504, 501, 500};
 
 // Create an array of your profiles
@@ -311,8 +313,8 @@ int main(int argc, char *argv[]){
 	// }
 
 
-	if(bucket_flag){
-		bucket_flag = 0;
+	if(bucket_flag > 0){
+		bucket_flag--;
 		goto BUCKET_STAGE;
 	}
 
@@ -358,9 +360,10 @@ int main(int argc, char *argv[]){
 	*/
 	
 	//int size = buffer_size(&rb);
-	if(isEmpty(&rb)){
-		STATE = 0;
-		goto POLLING_STAGE;
+
+	if(double_flag){
+		double_flag = 0;
+		mTimer(4000);
 	}
 	if(rb.buffer[rb.head] == curr_tray){
 		//mTimer(100);
@@ -368,7 +371,7 @@ int main(int argc, char *argv[]){
 		//mTimer(500);
 
 	}else{
-		PORTB = Brake_to_Vcc;
+		//PORTB = Brake_to_Vcc;
 		//========================================//
 		// PUT THE BRAKE HERE INSTEAD OF ISR
 		//PORTB = Brake_to_Vcc;
@@ -401,30 +404,20 @@ int main(int argc, char *argv[]){
 	dequeue(&rb);
 	
 
-	// if(buffer_size(&rb) > 0){
-	// 	char next = rb.buffer[rb.head];
-	// 	if(next != stepper_tray){
-	// 		if((next - stepper_tray == 3)||(next - stepper_tray == -1)){
-	// 			ACC_CW_STEPPER(50);
-	// 			last_direction = 0;
-	// 		}else if((next - stepper_tray == -3)||(next - stepper_tray == 1)){
-	// 			ACC_CCW_STEPPER(50);
-	// 			last_direction = 1;
-	// 		}else if(last_direction == 0){
-	// 			ACC_CW_STEPPER(100);
-	// 			last_direction = 0;
-	// 		}else{
-	// 			ACC_CCW_STEPPER(100);
-	// 			last_direction = 1;
-	// 		}
-	// 		stepper_tray = next;
-	// 	}
-	// }
+	if(buffer_size(&rb) > 0){
+		char next = rb.buffer[rb.head];
+		if(next == curr_tray){
+			double_flag = 1;
+		}
+	}
 	//mTimer(350);
 	//PORTB = CCW_DC;
 
 
-	
+	if(isEmpty(&rb)){
+		STATE = 0;
+		goto POLLING_STAGE;
+	}
 	
 	
 	
@@ -498,11 +491,15 @@ ISR(INT1_vect){//Debounc button
 ISR(INT4_vect)
 {
 	//sei();
-	/*======================
-	COMMENTED THIS OUT*/
-		//mTimer(100);
+
+	if(double_flag){
+		// double_flag = 0;
+		// start_flag = 0;
+		bucket_flag++;
+		return;
+	}
 	PORTB = Brake_to_Vcc;
-	bucket_flag = 1;
+	bucket_flag++;
 
 	
 	//Go to bucket stage
@@ -726,7 +723,7 @@ void ACC_CW_STEPPER(int steps){
 			curr_step = 1;
 		}
 		
-		if(i == (steps - accel_size*2-15)){
+		if(i == (steps - accel_size*2-20)){
 			//ADCSRA |= _BV(ADIE);
 			//sei();
 			PORTB = CCW_DC;
@@ -799,7 +796,7 @@ void ACC_CCW_STEPPER(int steps){
 			curr_step = 4;
 		}
 		
-		if(i == (steps - accel_size*2-15)){
+		if(i == (steps - accel_size*2-20)){
 			//ADCSRA |= _BV(ADIE);'
 			//sei();
 			PORTB = CCW_DC;
