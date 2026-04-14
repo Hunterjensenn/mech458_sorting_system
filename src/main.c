@@ -31,9 +31,9 @@
 #define steel 1
 #define white_plastic 2
 #define aluminum 3
-#define aluminum_threshold 150
+#define aluminum_threshold 200
 #define steel_threshold 700
-#define white_threshold 935
+#define white_threshold 934
 #define BUFFER_SIZE 48
 
 /* ====================Global Variables======================*/
@@ -69,7 +69,7 @@ int step_array[] = {54, 46, 45, 53};
 // int accel_array[] = {2000, 1743, 1536, 1348, 1193, 1038, 966, 915, 878, 850, 830, 815, 806, 801, 800};
 
 //PRETTY GOOD AT HIGH TORQUE
-// int accel_array[] = {1700, 1699, 1696, 1685, 1659, 1603, 1495, 1323, 1100, 877, 705, 597, 541, 515, 504, 501, 500};
+// int accel_array1[] = {1700, 1699, 1696, 1685, 1659, 1603, 1495, 1323, 1100, 877, 705, 597, 541, 515, 504, 501, 500};
 
 //NOT BAD AT LOW TORQUE 
 // int accel_array1[] = {1600, 1599, 1596, 1586, 1563, 1511, 1412, 1254, 1050, 846, 688, 589, 537, 514, 504, 501, 500};
@@ -79,7 +79,23 @@ int step_array[] = {54, 46, 45, 53};
 // int accel_array[] = {1700, 1680, 1640, 1560, 1460, 1350, 1220, 1080, 950, 840, 740, 660, 620, 600};
 
 //GOOD ONE
-int accel_array1[] = {1700, 1680, 1620, 1520, 1400, 1260, 1100, 940, 800, 680, 580, 520, 500};
+// int accel_array1[] = {1700, 1680, 1620, 1520, 1400, 1260, 1100, 940, 800, 680, 580, 520, 500};
+
+//FALL BACK
+int accel_array1[] = {1800, 1780, 1720, 1620, 1500, 1360, 1200, 1040, 900, 780, 680, 620, 600};
+
+// int accel_array1[] = {2000, 1980, 1920, 1820, 1700, 1560, 1400, 1240, 1100, 980, 880, 820, 800};
+
+// int accel_array1[] = {1900, 1887, 1847, 1782, 1695, 1589, 1468, 1337, 1200, 1063, 932, 811, 705, 618, 553, 513, 500};
+
+//COSINE TO TRY 15 STEPS
+// int accel_array1[] = {1800, 1784, 1736, 1658, 1555, 1432, 1295, 1150, 1005, 868, 745, 642, 564, 516, 500};
+
+//CAN USE WITH PRERELEASE AT 15
+// int accel_array1[] = {1700, 1685, 1641, 1569, 1474, 1360, 1234, 1100, 966, 840, 726, 631, 559, 515, 500};
+
+//SIGMOID TO TRY 
+// int accel_array1[] = {1800, 1799, 1793, 1768, 1687, 1488, 1150, 812, 613, 532, 507, 501, 500};
 
 //Seems sort of okay
 // int accel_array1[] = {1500, 1490, 1460, 1420, 1350, 1280, 1190, 1100, 1000, 900, 810, 720, 650, 580, 540, 510, 500};
@@ -104,7 +120,7 @@ int accel_array1[] = {1700, 1680, 1620, 1520, 1400, 1260, 1100, 940, 800, 680, 5
 // } AccelProfile;
 
 // int accel_array1[] = {1700, 1650, 1560, 1430, 1280, 1120, 960, 810, 690, 600, 550, 520, 500};
-int accel_array2[] = {1700, 1699, 1696, 1685, 1659, 1603, 1495, 1323, 1100, 877, 705, 597, 541, 515, 504, 501, 500};
+// int accel_array2[] = {1700, 1699, 1696, 1685, 1659, 1603, 1495, 1323, 1100, 877, 705, 597, 541, 515, 504, 501, 500};
 
 // Create an array of your profiles
 // AccelProfile profiles[2] = {
@@ -243,10 +259,12 @@ int main(int argc, char *argv[]){
 	while((PINA & 0x80) == 0x80){
 		CW_stepper(1);
 	}
+	
 	CCW_stepper(3);
 	//Initialize motor counter clockwise
+
 	PORTB = CCW_DC;
-	OCR0A = 140;
+	OCR0A = 175;
 
 	goto POLLING_STAGE;
 
@@ -308,9 +326,9 @@ int main(int argc, char *argv[]){
 	}
 
 
-	// if(num_sorted > 24){
-	// 	current_profile_index = 1; // Switches to accel_array2
-	// }
+	if(num_sorted > 3){
+		OCR0A = 130; // Switches to accel_array2
+	}
 
 
 	if(bucket_flag > 0){
@@ -666,7 +684,7 @@ void killTimer_init(void){
     TCCR3A = 0x00;
     TCCR3B = 0x00;
     TCCR3B |= _BV(WGM32);              // CTC mode
-    OCR3A = 39062;                      // ~7.5 seconds per hit, 2 hits = 15s
+    OCR3A = 19531; //      39062               // ~7.5 seconds per hit, 2 hits = 15s
     TCNT3 = 0x0000;
     TIFR3 |= _BV(OCF3A);               // clear any pending flag
     TIMSK3 |= _BV(OCIE3A);             // enable compare interrupt
@@ -723,7 +741,7 @@ void ACC_CW_STEPPER(int steps){
 			curr_step = 1;
 		}
 		
-		if(i == (steps - accel_size*2-20)){
+		if(i == (steps - accel_size*2-15)){
 			//ADCSRA |= _BV(ADIE);
 			//sei();
 			PORTB = CCW_DC;
@@ -796,7 +814,7 @@ void ACC_CCW_STEPPER(int steps){
 			curr_step = 4;
 		}
 		
-		if(i == (steps - accel_size*2-20)){
+		if(i == (steps - accel_size*2-15)){
 			//ADCSRA |= _BV(ADIE);'
 			//sei();
 			PORTB = CCW_DC;
